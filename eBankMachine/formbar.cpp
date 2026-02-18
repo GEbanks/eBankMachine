@@ -1,16 +1,7 @@
 // ============================
 // FILE: formbar.cpp
 // ============================
-#include "formbar.h"
-#include "globals.h"
-#include "config.h"
-#include "net.h"
-
-#include <WiFiClientSecure.h>
-#include <HTTPClient.h>
-#include <ArduinoJson.h>
-#include <WiFi.h>
-
+#include "eBankMachine.h"
 bool formbarTransfer(int from, int to, int amount, const char* reason, int pin, String& outResp, int& outHttp) {
   WiFiClientSecure client;
   client.setInsecure();

@@ -1,8 +1,7 @@
 // ============================
 // FILE: ui.cpp
 // ============================
-#include "ui.h"
-#include "globals.h"
+#include "eBankMachine.h"
 
 void showMsg(const char* line0, const char* line1, unsigned long ms) {
   lcd.clear();

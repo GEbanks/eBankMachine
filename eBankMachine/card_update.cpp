@@ -4,9 +4,7 @@
 // This keeps your build compiling while you re-add your card write flow.
 // It’s wired into the menu + keypad, but does nothing dangerous by default.
 
-#include "card_update.h"
-#include "globals.h"
-#include "ui.h"
+#include "eBankMachine.h"
 
 void startCardUpdateFlow() {
   tradeMode = MODE_UPDATE_CARD;

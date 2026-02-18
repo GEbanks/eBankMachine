@@ -1,13 +1,7 @@
 // ============================
 // FILE: deposit.cpp
 // ============================
-#include "deposit.h"
-#include "globals.h"
-#include "config.h"
-#include "ui.h"
-#include "net.h"
-#include "formbar.h"
-
+#include "eBankMachine.h"
 void startDepositFlow() {
   tradeMode = MODE_REAL_TO_DIGI;
   depState = DEP_ENTER_ID;

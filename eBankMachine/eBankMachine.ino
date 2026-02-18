@@ -1,23 +1,7 @@
 // ============================
 // eBankMachine.ino
 // ============================
-#include <WiFi.h>
-
-#include "config.h"
-#include "globals.h"
-
-#include "ota_web.h"
-#include "net.h"
-#include "hardware.h"
-#include "ui.h"
-
-#include "drop.h"
-#include "deposit.h"
-#include "withdraw.h"
-#include "card_update.h"
-
-#include "keypad_router.h"
-#include "refund_tick.h"
+#include "eBankMachine.h"
 
 void setup() {
   Serial.begin(115200);

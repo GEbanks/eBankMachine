@@ -1,8 +1,7 @@
 // ============================
 // FILE: ntag.cpp
 // ============================
-#include "ntag.h"
-#include "globals.h"
+#include "eBankMachine.h"
 
 bool ntagRead64(char out[65]) {
   memset(out, 0, 65);

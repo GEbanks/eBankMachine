@@ -1,11 +1,7 @@
 // ============================
 // FILE: drop.cpp
 // ============================
-#include "drop.h"
-#include "globals.h"
-#include "config.h"
-#include "ui.h"
-#include "hardware.h"
+#include "eBankMachine.h"
 
 void finishDrop(const char* why) {
   (void)why;

@@ -1,14 +1,7 @@
 // ============================
 // FILE: hardware.cpp
 // ============================
-#include "hardware.h"
-#include "globals.h"
-#include "config.h"
-#include "ui.h"
-#include "ota_web.h"
-#include "formbar.h"
-
-#include <Wire.h>
+#include "eBankMachine.h"
 
 static bool servoAttached = false;
 

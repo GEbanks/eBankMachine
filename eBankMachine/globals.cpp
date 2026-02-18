@@ -1,8 +1,7 @@
 // ============================
 // FILE: globals.cpp
 // ============================
-#include "globals.h"
-#include "config.h"
+#include "eBankMachine.h"
 
 // Keypad layout + pins
 static const byte ROWS = 4, COLS = 4;

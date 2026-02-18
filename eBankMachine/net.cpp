@@ -1,13 +1,7 @@
 // ============================
 // FILE: net.cpp
 // ============================
-#include "net.h"
-#include "globals.h"
-#include "config.h"
-#include "ui.h"
-#include "ota_web.h"
-#include <WiFi.h>
-
+#include "eBankMachine.h"
 void wifiEnsureConnected() {
   if (WiFi.status() == WL_CONNECTED) {
     setupWebOtaOnce();

@@ -1,11 +1,7 @@
 // ============================
 // FILE: refund_tick.cpp
 // ============================
-#include "refund_tick.h"
-#include "globals.h"
-#include "config.h"
-#include "formbar.h"
-#include "ui.h"
+#include "eBankMachine.h"
 
 void refundTick() {
   if (!refundPending) return;

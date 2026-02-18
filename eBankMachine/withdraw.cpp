@@ -1,15 +1,7 @@
 // ============================
 // FILE: withdraw.cpp
 // ============================
-#include "withdraw.h"
-#include "globals.h"
-#include "config.h"
-#include "ui.h"
-#include "net.h"
-#include "formbar.h"
-#include "drop.h"
-#include "hardware.h"
-
+#include "eBankMachine.h"
 void startWithdrawWizard() {
   tradeMode = MODE_DIGI_TO_REAL;
   wzFrom = wzPin = wzPogs = 0;

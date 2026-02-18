@@ -1,14 +1,7 @@
 // ============================
 // FILE: ota_web.cpp
 // ============================
-#include "ota_web.h"
-#include "globals.h"
-#include "config.h"
-
-#include <WiFi.h>
-#include <WiFiClient.h>
-#include <ESPmDNS.h>
-#include <Update.h>
+#include "eBankMachine.h"
 
 // Login + server index HTML
 static const char* loginIndex =

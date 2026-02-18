@@ -1,12 +1,7 @@
 // ============================
 // FILE: keypad_router.cpp
 // ============================
-#include "keypad_router.h"
-#include "globals.h"
-#include "ui.h"
-#include "withdraw.h"
-#include "deposit.h"
-#include "card_update.h"
+#include "eBankMachine.h"
 
 void keypadTick() {
   if (!keypad.getKeys()) return;
