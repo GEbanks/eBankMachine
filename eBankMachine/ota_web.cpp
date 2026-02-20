@@ -1,9 +1,7 @@
-// ============================
-// FILE: ota_web.cpp
-// ============================
 #include "eBankMachine.h"
 
-// Login + server index HTML
+extern const char* __dbgTextForWeb(); // from globals.cpp
+
 static const char* loginIndex =
   "<form name='loginForm'>"
   "<table width='20%' bgcolor='A09F9F' align='center'>"
@@ -24,6 +22,9 @@ static const char* loginIndex =
 static const char* serverIndex =
   "<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>"
   "<h3 style='text-align:center;'>ESP32 Web OTA Updater</h3>"
+  "<div style='text-align:center; margin-bottom:10px;'>"
+  "<a href='/debug' target='_blank'>Open Debug Log</a>"
+  "</div>"
   "<form method='POST' action='#' enctype='multipart/form-data' id='upload_form' style='text-align:center;'>"
   "<div style='margin:10px;'><input type='password' name='otapass' placeholder='OTA Password'/></div>"
   "<div style='margin:10px;'><input type='file' name='update'/></div>"
@@ -50,8 +51,6 @@ static const char* serverIndex =
   "});"
   "</script>";
 
-static bool mdnsStarted = false;
-
 static bool checkOtaPassword() {
   if (!server.hasArg("otapass")) return false;
   return server.arg("otapass") == OTA_PASSWORD;
@@ -69,8 +68,10 @@ void setupWebOtaOnce() {
   if (otaStarted) return;
   if (WiFi.status() != WL_CONNECTED) return;
 
-  if (!mdnsStarted) {
-    if (MDNS.begin(OTA_HOST)) mdnsStarted = true;
+  if (!MDNS.begin(OTA_HOST)) {
+    dbgPrintf("mDNS start FAILED\n");
+  } else {
+    dbgPrintf("mDNS started\n");
   }
 
   server.on("/", HTTP_GET, []() {
@@ -83,29 +84,70 @@ void setupWebOtaOnce() {
     server.send(200, "text/html", serverIndex);
   });
 
+  // ===== Debug endpoints (same port 80) =====
+  server.on("/debug.txt", HTTP_GET, []() {
+    server.send(200, "text/plain", __dbgTextForWeb());
+  });
+
+  server.on("/debug/clear", HTTP_POST, []() {
+    dbgClear();
+    server.send(200, "text/plain", "cleared");
+  });
+
+  server.on("/reboot", HTTP_POST, []() {
+    server.send(200, "text/plain", "rebooting");
+    delay(150);
+    ESP.restart();
+  });
+
+  server.on("/debug", HTTP_GET, []() {
+    String page =
+      "<html><head><meta name='viewport' content='width=device-width, initial-scale=1'/>"
+      "<title>eBank Debug</title></head>"
+      "<body style='font-family:monospace;'>"
+      "<h3>Debug Log</h3>"
+      "<form method='POST' action='/debug/clear' style='display:inline;'>"
+      "<button type='submit'>Clear</button></form> "
+      "<form method='POST' action='/reboot' style='display:inline;'>"
+      "<button type='submit'>Reboot</button></form>"
+      "<pre id='log' style='white-space:pre-wrap;'></pre>"
+      "<script>"
+      "function tick(){fetch('/debug.txt').then(r=>r.text()).then(t=>{"
+      "document.getElementById('log').innerText=t;"
+      "window.scrollTo(0,document.body.scrollHeight);"
+      "});}"
+      "setInterval(tick,1000); tick();"
+      "</script>"
+      "</body></html>";
+    server.send(200, "text/html", page);
+  });
+
+  // ===== OTA upload endpoint =====
   server.on(
     "/update", HTTP_POST,
     []() {
       server.sendHeader("Connection", "close");
       server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+      delay(150);
       ESP.restart();
     },
     []() {
       HTTPUpload& upload = server.upload();
 
       if (!checkOtaPassword()) {
-        if (upload.status == UPLOAD_FILE_START) Serial.println("OTA denied: bad password");
+        if (upload.status == UPLOAD_FILE_START) dbgPrintf("OTA denied: bad password\n");
         if (Update.isRunning()) Update.abort();
         return;
       }
 
       if (upload.status == UPLOAD_FILE_START) {
-        Serial.printf("Update: %s\n", upload.filename.c_str());
+        dbgPrintf("Update: %s\n", upload.filename.c_str());
+        servoStopDetach();
         if (!Update.begin(UPDATE_SIZE_UNKNOWN)) Update.printError(Serial);
       } else if (upload.status == UPLOAD_FILE_WRITE) {
         if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) Update.printError(Serial);
       } else if (upload.status == UPLOAD_FILE_END) {
-        if (Update.end(true)) Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
+        if (Update.end(true)) dbgPrintf("Update Success: %u\nRebooting...\n", (unsigned)upload.totalSize);
         else Update.printError(Serial);
       }
     }
@@ -114,9 +156,8 @@ void setupWebOtaOnce() {
   server.begin();
   otaStarted = true;
 
-  Serial.print("HTTP: http://");
-  Serial.print(WiFi.localIP());
-  Serial.println("/");
+  dbgPrintf("HTTP: http://%s/\n", WiFi.localIP().toString().c_str());
+  dbgPrintf("Debug: http://%s/debug\n", WiFi.localIP().toString().c_str());
 }
 
 void otaTick() {

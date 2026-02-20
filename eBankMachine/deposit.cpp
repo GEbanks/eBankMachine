@@ -1,7 +1,8 @@
 // ============================
-// FILE: deposit.cpp
+// deposit.cpp
 // ============================
 #include "eBankMachine.h"
+
 void startDepositFlow() {
   tradeMode = MODE_REAL_TO_DIGI;
   depState = DEP_ENTER_ID;
@@ -38,11 +39,13 @@ void depositTick() {
 void handleDepositKey(char k) {
   if (tradeMode != MODE_REAL_TO_DIGI) return;
 
+  // Enter ID mode
   if (depState == DEP_ENTER_ID) {
     if (k == '*') {
       showDepositEnterId();
       return;
     }
+
     if (k >= '0' && k <= '9') {
       if (numLen < sizeof(numBuf) - 1) {
         numBuf[numLen++] = k;
@@ -52,6 +55,7 @@ void handleDepositKey(char k) {
       }
       return;
     }
+
     if (k == '#') {
       long val = (numLen > 0) ? atol(numBuf) : 0;
       if (val <= 0) {
@@ -75,30 +79,38 @@ void handleDepositKey(char k) {
     return;
   }
 
-  if (depState == DEP_SCANNING) {
-    if (k == '#') {
-      wifiEnsureConnected();
-      showMsg("Sending deposit", "Please wait", 0);
+  // Scanning mode: # sends deposit
+  if (depState == DEP_SCANNING && k == '#') {
+    wifiEnsureConnected();
+    showMsg("Sending deposit", "Please wait", 0);
 
-      int dp = depositCount * DIGIPOGS_PER_POG_DEPOSIT;
-      String resp;
-      int httpc = 0;
-      bool ok = formbarTransfer(KIOSK_ID, (int)depToId, dp, "Pogs -> Digi", KIOSK_ACCOUNT_PIN, resp, httpc);
+    int dp = depositCount * DIGIPOGS_PER_POG_DEPOSIT;
+    String resp;
+    int httpc = 0;
+    FbErr err;
 
-      if (ok) {
-        char l1[17];
-        snprintf(l1, sizeof(l1), "+%d dpogs", dp);
-        showMsg("Deposit OK", l1, 1800);
-      } else {
-        showMsg("Deposit FAIL", "Check PIN/API", 2500);
-        Serial.print("Deposit HTTP=");
-        Serial.println(httpc);
-        Serial.println(resp);
-      }
+    bool ok = formbarTransferEx(
+      KIOSK_ID,
+      (int)depToId,
+      dp,
+      "Pogs -> Digi",
+      KIOSK_ACCOUNT_PIN,
+      resp,
+      httpc,
+      err
+    );
 
-      tradeMode = MODE_SELECT;
-      showModeMenu();
-      return;
+    if (ok) {
+      char l1[17];
+      snprintf(l1, sizeof(l1), "+%d dpogs", dp);
+      showMsg("Deposit OK", l1, 1800);
+      dbgPrintf("Deposit OK to=%ld dp=%d\n", depToId, dp);
+    } else {
+      showMsg("Deposit FAIL", fbErrMsg(err), 2500);
+      dbgPrintf("Deposit FAIL err=%d http=%d resp=%s\n", (int)err, httpc, resp.c_str());
     }
+
+    tradeMode = MODE_SELECT;
+    showModeMenu();
   }
 }

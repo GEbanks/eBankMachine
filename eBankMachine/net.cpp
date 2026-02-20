@@ -1,7 +1,5 @@
-// ============================
-// FILE: net.cpp
-// ============================
 #include "eBankMachine.h"
+
 void wifiEnsureConnected() {
   if (WiFi.status() == WL_CONNECTED) {
     setupWebOtaOnce();
@@ -9,9 +7,11 @@ void wifiEnsureConnected() {
   }
 
   showMsg("WiFi...", "reconnecting", 0);
+  dbgPrintf("WiFi reconnect...\n");
 
   WiFi.disconnect(true);
   WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
 
   unsigned long start = millis();

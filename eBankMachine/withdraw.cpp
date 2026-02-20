@@ -1,7 +1,8 @@
 // ============================
-// FILE: withdraw.cpp
+// withdraw.cpp
 // ============================
 #include "eBankMachine.h"
+
 void startWithdrawWizard() {
   tradeMode = MODE_DIGI_TO_REAL;
   wzFrom = wzPin = wzPogs = 0;
@@ -9,32 +10,51 @@ void startWithdrawWizard() {
   showEntry(F("Enter FROM ID"));
 }
 
-// NOTE: includes the “C triple drop 1” and “D triple unjam” shortcuts exactly like your original
 void handleWithdrawKey(char k) {
   if (tradeMode != MODE_DIGI_TO_REAL) return;
 
   unsigned long now = millis();
 
-  // Debug / service keys
+  // C x3 -> drop 1
   if (k == 'C') {
-    if (motionState != MS_IDLE) { showMsg("Busy...", nullptr, 400); return; }
-    if (cPressCount == 0 || (now - cWindowStart) > D_WINDOW_MS) { cPressCount = 0; cWindowStart = now; }
+    if (motionState != MS_IDLE) {
+      showMsg("Busy...", nullptr, 400);
+      return;
+    }
+    if (cPressCount == 0 || (now - cWindowStart) > D_WINDOW_MS) {
+      cPressCount = 0;
+      cWindowStart = now;
+    }
     cPressCount++;
-    if (cPressCount >= 3) { cPressCount = 0; cWindowStart = 0; startDrop(1); }
+    if (cPressCount >= 3) {
+      cPressCount = 0;
+      cWindowStart = 0;
+      startDrop(1);
+    }
     return;
   }
 
+  // D x3 -> unjam 2s
   if (k == 'D') {
-    if (motionState != MS_IDLE) { showMsg("Busy...", nullptr, 400); return; }
-    if (dPressCount == 0 || (now - dWindowStart) > D_WINDOW_MS) { dPressCount = 0; dWindowStart = now; }
+    if (motionState != MS_IDLE) {
+      showMsg("Busy...", nullptr, 400);
+      return;
+    }
+    if (dPressCount == 0 || (now - dWindowStart) > D_WINDOW_MS) {
+      dPressCount = 0;
+      dWindowStart = now;
+    }
     dPressCount++;
     if (dPressCount >= 3) {
-      dPressCount = 0; dWindowStart = 0;
+      dPressCount = 0;
+      dWindowStart = 0;
+
       showMsg("UNJAM UP", nullptr, 300);
       servoAttach();
       myServo.writeMicroseconds(SERVO_UP_US);
       otaDelay(2000);
       servoStopDetach();
+
       showModeMenu();
       tradeMode = MODE_SELECT;
     }
@@ -43,8 +63,12 @@ void handleWithdrawKey(char k) {
 
   // Cancel / clear
   if (k == '*') {
-    if (wzState == WZ_CONFIRM) { tradeMode = MODE_SELECT; showModeMenu(); }
-    else clearEntryLine();
+    if (wzState == WZ_CONFIRM) {
+      tradeMode = MODE_SELECT;
+      showModeMenu();
+    } else {
+      clearEntryLine();
+    }
     return;
   }
 
@@ -57,16 +81,26 @@ void handleWithdrawKey(char k) {
       int digipogs = (int)wzPogs * DIGIPOGS_PER_POG_WITHDRAW;
       String resp;
       int httpc = 0;
-      bool ok = formbarTransfer((int)wzFrom, KIOSK_ID, digipogs, "Digi -> Pogs", (int)wzPin, resp, httpc);
+      FbErr err;
+
+      bool ok = formbarTransferEx(
+        (int)wzFrom,
+        KIOSK_ID,
+        digipogs,
+        "Digi -> Pogs",
+        (int)wzPin,
+        resp,
+        httpc,
+        err
+      );
 
       if (ok) {
         showMsg("Transfer OK", "Dropping...", 700);
+        dbgPrintf("Withdraw OK from=%ld pogs=%ld\n", wzFrom, wzPogs);
         startDrop((int)wzPogs);
       } else {
-        showMsg("Transfer FAIL", "Bad PIN/ID?", 2200);
-        Serial.print("Withdraw HTTP=");
-        Serial.println(httpc);
-        Serial.println(resp);
+        showMsg("Transfer FAIL", fbErrMsg(err), 2500);
+        dbgPrintf("Withdraw FAIL err=%d http=%d resp=%s\n", (int)err, httpc, resp.c_str());
         tradeMode = MODE_SELECT;
         showModeMenu();
       }
@@ -82,26 +116,44 @@ void handleWithdrawKey(char k) {
 
       lcd.setCursor(7 + (numLen - 1), 1);
       if (wzState == WZ_ENTER_PIN) lcd.print('*');
-      else                        lcd.print(k);
+      else                         lcd.print(k);
     }
     return;
   }
 
+  // Next step
   if (k == '#') {
     long val = (numLen > 0) ? atol(numBuf) : 0;
 
     if (wzState == WZ_ENTER_FROM) {
-      if (val <= 0) { showMsg("Invalid FROM", nullptr, 900); showEntry(F("Enter FROM ID")); }
-      else { wzFrom = val; wzState = WZ_ENTER_PIN; showEntry(F("Enter PIN")); }
+      if (val <= 0) {
+        showMsg("Invalid FROM", nullptr, 900);
+        showEntry(F("Enter FROM ID"));
+      } else {
+        wzFrom = val;
+        wzState = WZ_ENTER_PIN;
+        showEntry(F("Enter PIN"));
+      }
     } else if (wzState == WZ_ENTER_PIN) {
-      if (val <= 0) { showMsg("Invalid PIN", nullptr, 900); showEntry(F("Enter PIN")); }
-      else { wzPin = val; wzState = WZ_ENTER_POGS; showEntry(F("Enter POGS")); }
+      if (val <= 0) {
+        showMsg("Invalid PIN", nullptr, 900);
+        showEntry(F("Enter PIN"));
+      } else {
+        wzPin = val;
+        wzState = WZ_ENTER_POGS;
+        showEntry(F("Enter POGS"));
+      }
     } else if (wzState == WZ_ENTER_POGS) {
-      if (val <= 0) { showMsg("Invalid POGS", nullptr, 900); showEntry(F("Enter POGS")); }
-      else { wzPogs = val; wzState = WZ_CONFIRM; showConfirmWithdraw(wzPogs); }
+      if (val <= 0) {
+        showMsg("Invalid POGS", nullptr, 900);
+        showEntry(F("Enter POGS"));
+      } else {
+        wzPogs = val;
+        wzState = WZ_CONFIRM;
+        showConfirmWithdraw(wzPogs);
+      }
     }
 
     clearEntryLine();
-    return;
   }
 }

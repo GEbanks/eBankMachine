@@ -1,6 +1,3 @@
-// ============================
-// FILE: refund_tick.cpp
-// ============================
 #include "eBankMachine.h"
 
 void refundTick() {

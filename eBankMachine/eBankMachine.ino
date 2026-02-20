@@ -1,61 +1,46 @@
-// ============================
-// eBankMachine.ino
-// ============================
 #include "eBankMachine.h"
 
 void setup() {
   Serial.begin(115200);
   delay(200);
 
+  dbgClear();
+  dbgPrintf("BOOT\n");
+
   hardwareInit();
 
-  // WiFi initial connect (15s) + then start OTA server once connected
+  // WiFi initial connect (15s)
   WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
 
-  Serial.print("Connecting to WiFi");
   unsigned long startAttemptTime = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 15000) {
-    Serial.print(".");
-    delay(500);
+    delay(250);
   }
-  Serial.println();
 
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("WiFi Connected!");
-    Serial.print("IP Address: ");
-    Serial.println(WiFi.localIP());
+    dbgPrintf("WiFi OK IP=%s\n", WiFi.localIP().toString().c_str());
     setupWebOtaOnce();
   } else {
-    Serial.println("WiFi FAILED to connect.");
+    dbgPrintf("WiFi FAILED\n");
   }
 
   showModeMenu();
 }
 
 void loop() {
-  // OTA HTTP server tick
   otaTick();
 
-  // WiFi keep-alive (also re-starts OTA when WiFi returns)
   if (WiFi.status() != WL_CONNECTED) wifiEnsureConnected();
 
-  // auto refund retries
   refundTick();
-
-  // limit switch debounce + edge handling
   limitSwitchTick();
 
-  // drop IR counting
   dropTick();
-
-  // deposit IR counting
   depositTick();
-
-  // card tick (stub)
   cardTick();
 
-  // keypad -> routes to correct mode handler
   keypadTick();
 
   delay(1);

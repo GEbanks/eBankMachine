@@ -1,6 +1,3 @@
-// ============================
-// FILE: ui.cpp
-// ============================
 #include "eBankMachine.h"
 
 void showMsg(const char* line0, const char* line1, unsigned long ms) {
@@ -41,7 +38,7 @@ void showEntry(const __FlashStringHelper* prompt) {
 }
 
 void showConfirmWithdraw(long pogs) {
-  long digipogs = pogs * 150;
+  long digipogs = pogs * DIGIPOGS_PER_POG_WITHDRAW;
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(F("Use "));
